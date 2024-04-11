@@ -92,8 +92,9 @@ fn test_query_list(){
     let page_size = sql::Condition::PageSize(3);
     let asc = sql::Condition::OrderByAESOrDESC(1);
 
+    let bc = [page_index, page_size, asc, ];
 
-    let result = service::test_user_sve::query_list(&params, &[page_index, page_size, asc, ]);
+    let result = service::test_user_sve::query_list(&params, &bc);
     if result.is_err(){
         warn!("出现异常 {:?}", result);
         return;
@@ -105,6 +106,9 @@ fn test_query_list(){
                 i.id, i.created_at, i.updated_at, i.user_name, i.state
             );
     }
+
+    let result = service::test_user_sve::query_count(&params, &bc);
+    info!("查询 query_count 数量={:?}", result)
 }
 
 fn test_update() {

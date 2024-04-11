@@ -5,6 +5,7 @@ use r2d2_mysql::mysql::{Transaction, Value, Row};
 use r2d2_mysql::mysql::prelude::Queryable;
 use crate::model::test_user;
 use i_dao::{sql};
+use r2d2_mysql::{MySqlConnectionManager, r2d2};
 
 pub fn query_list(tx: &mut Transaction, condition_params: &HashMap<String, Box<dyn Any>>, condition: &[sql:: Condition]) -> Result<Vec<test_user::TestUser>, Box<dyn std::error::Error>> {
     let mut query_sql = format!("SELECT {} FROM {}", test_user::get_field_sql(""), test_user::TABLE_NAME);
@@ -46,6 +47,51 @@ pub fn query_list(tx: &mut Transaction, condition_params: &HashMap<String, Box<d
 
     return Ok(result?);
 }
+
+pub fn query_count(conn: &mut r2d2::PooledConnection<MySqlConnectionManager>, condition_params: &HashMap<String, Box<dyn Any>>, condition: &[sql:: Condition]) -> Result<u64, Box<dyn std::error::Error>> {
+    let mut query_sql = format!("SELECT COUNT(1) AS co FROM {}", test_user::TABLE_NAME);
+    let mut params: Vec<Value> = vec![];
+
+    let mut where_sql = sql::pot_base_condition_by_time(&mut params, &condition);
+
+    for (key, val) in condition_params.iter() {
+        let (i_key, operator) = sql::get_real_key_operator(key.to_string());
+        if "" != where_sql {
+            where_sql = format!(" {} AND {} {} ?", where_sql, i_key, operator)
+        } else {
+            where_sql = format!(" {} {} ?", i_key, operator)
+        }
+
+        if !sql::pot_params_condition(&mut params, &val) {
+            warn!("test_user_dao::query_count::pot_params_condition - {} 参数装入失败", key)
+        }
+    }
+
+    if "" != where_sql {
+        query_sql = format!("{} WHERE {}", query_sql, where_sql);
+    }
+
+    debug!("test_user_dao::query_count::query_sql={}", query_sql);
+    let result = conn.exec_first::<u64,_,_> (
+        query_sql,  params );
+
+    return match result {
+        Err(e) => {
+            Err(Box::new(e))
+        },
+        Ok(op) => {
+            return match op {
+                Some(c) => {
+                    Ok(c)
+                },
+                _ => {
+                    Ok(0)
+                }
+            }
+        },
+    };
+}
+
 
 pub fn find_by_id(tx: &mut Transaction, id: u64) -> Result<Option<test_user::TestUser>, Box<dyn std::error::Error>> {
     let query_sql = format!("SELECT {} FROM {} WHERE {} = ? LIMIT 0,1", test_user::get_field_sql("") ,test_user::TABLE_NAME, test_user::FIELDS[0]);

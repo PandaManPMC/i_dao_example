@@ -709,9 +709,9 @@ checksum = "9a3a5bfb195931eeb336b2a7b4d761daec841b97f947d34394601737a7bba5e4"
 
 [[package]]
 name = "i_dao"
-version = "0.1.0"
+version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8e93e28e12ef90dee3d5f413e40a5d89cf1b62a0ff2131039b6dcc375db8708c"
+checksum = "66c3e7dab954c49c7bb40777913f8772918c47df206c46aec0aba36258202aef"
 dependencies = [
  "env_logger",
  "lazy_static",
